@@ -1,0 +1,19 @@
+# Ignore virtual environment
+.venv/
+venv/
+env/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Jupyter Notebook checkpoints (jika ada)
+.ipynb_checkpoints/
+
+# Ignore Streamlit log files (opsional)
+.streamlit/
+
+# Ignore dependencies (akan dibuat ulang dari requirements.txt)
+*.egg-info/
