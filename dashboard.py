@@ -43,18 +43,16 @@ else:
     max_rentals = int(max_rentals * 1.1)  
 
 # Bar plot penyewaan sepeda
+st.subheader("Pengaruh Kondisi Cuaca terhadap Penyewaan Sepeda")
+
+weather_avg_df = df.groupby("weathersit")["cnt"].mean().reset_index()
+colors = ["red" if w == "Cerah" else "gray" for w in weather_avg_df["weathersit"]]
+
 fig, ax = plt.subplots(figsize=(8, 5))
-bar_data = filtered_df[['casual', 'registered', 'cnt']].sum().reset_index()
-bars = sns.barplot(data=bar_data, x='index', y=0, palette='coolwarm', ax=ax)
-
-ax.set_title("Total Penyewaan Sepeda Berdasarkan Jenis Pengguna")
-ax.set_xlabel("Jenis Pengguna")
-ax.set_ylabel("Jumlah Penyewaan")
-ax.set_ylim(0, max_rentals)  # Atur batas y sesuai filter
-
-# Tambahkan label angka di atas batang
-for bar in bars.containers:
-    ax.bar_label(bar, fmt='%d', label_type='edge', fontsize=10)
+sns.barplot(x=weather_avg_df["weathersit"], y=weather_avg_df["cnt"], palette=colors, ax=ax)
+ax.set_title("Pengaruh Kondisi Cuaca terhadap Penyewaan Sepeda")
+ax.set_xlabel("Kondisi Cuaca")
+ax.set_ylabel("Rata-rata Penyewaan Sepeda")
 
 st.pyplot(fig)
 
