@@ -57,23 +57,20 @@ ax.set_ylabel("Rata-rata Penyewaan Sepeda")
 st.pyplot(fig)
 
 # Visualisasi penyewaan per jam
-st.subheader(f"Tren Penyewaan Sepeda per Jam pada {selected_season} dengan Cuaca {selected_weather}")
+st.subheader("Tren Penyewaan Sepeda per Jam di Musim Panas dan Musim Dingin")
+
+summer_df = df[df["season"] == "Musim Panas"].groupby("hr")["cnt"].mean().reset_index()
+winter_df = df[df["season"] == "Musim Dingin"].groupby("hr")["cnt"].mean().reset_index()
 
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.lineplot(data=filtered_df, x="hr", y="cnt", ax=ax, marker='o')
-ax.set_xticks([0, 6, 12, 18, 23])
-ax.set_xticklabels(["00:00", "06:00", "12:00", "18:00", "23:00"])
-ax.set_xlabel("Waktu (Jam)")
-ax.set_ylabel("Jumlah Penyewaan")
-ax.axvspan(7, 9, color='red', alpha=0.2, label="Jam Sibuk Pagi")
-ax.axvspan(17, 19, color='blue', alpha=0.2, label="Jam Sibuk Sore")
+sns.lineplot(data=summer_df, x="hr", y="cnt", ax=ax, color="orange", label="Musim Panas")
+sns.lineplot(data=winter_df, x="hr", y="cnt", ax=ax, color="blue", label="Musim Dingin")
+
+ax.set_xlabel("Waktu/Jam dalam sehari")
+ax.set_ylabel("Rata-rata Penyewaan Sepeda")
+ax.set_title("Tren Penyewaan Sepeda per Jam di Musim Panas dan Musim Dingin")
 ax.legend()
 
 st.pyplot(fig)
 
-peak_hour = filtered_df.loc[filtered_df["cnt"].idxmax(), "hr"]
-peak_count = filtered_df["cnt"].max()
-
-st.write(f"📌 Penyewaan sepeda tertinggi terjadi pada pukul {peak_hour}:00 dengan total {peak_count} penyewaan.")
-
-st.write("*Gunakan filter di sidebar untuk melihat data spesifik berdasarkan musim dan cuaca.*")
+st.write("Gunakan filter di sidebar untuk melihat data spesifik berdasarkan musim dan cuaca.")
