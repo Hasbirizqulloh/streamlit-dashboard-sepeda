@@ -5,7 +5,7 @@ import streamlit as st
 
 # Load dataset
 df = pd.read_csv("all_data.csv")
-day_df= pd.read_csv("day.csv")
+day_df = pd.read_csv("day.csv")
 
 # Ubah label musim dan cuaca ke dalam bahasa Indonesia
 season_mapping = {1: "Musim Semi", 2: "Musim Panas", 3: "Musim Gugur", 4: "Musim Dingin"}
@@ -15,7 +15,7 @@ df["season"] = df["season"].map(season_mapping)
 df["weathersit"] = df["weathersit"].map(weather_mapping)
 
 # Sidebar Filters
-st.sidebar.header("Filter Data")
+st.sidebar.header("Filter Data Jumlah Penyewaan Sepeda")
 season_options = ["ALL"] + list(df["season"].unique())
 weather_options = ["ALL"] + list(df["weathersit"].unique())
 selected_season = st.sidebar.selectbox("Pilih Musim:", season_options)
@@ -50,38 +50,50 @@ with col2:
     st.metric("Rata-rata Penyewaan", round(filtered_df["cnt"].mean(), 2))
 
 # Agregasi data berdasarkan kondisi cuaca
-weathersit_df = day_df.groupby("weathersit").agg({ 
-    "cnt": ["sum", "mean", "max", "min"],
-    "hum": ["mean"],
-    "windspeed": ["mean"]
-})
+weathersit_df = day_df.groupby("weathersit").agg({"cnt": "mean"}).reset_index()
+weathersit_df["weathersit"] = weathersit_df["weathersit"].map(weather_mapping)
 
-max_index = weathersit_df[('cnt', 'mean')].idxmax()
+# Menentukan warna: Merah untuk kondisi cuaca dengan penyewaan tertinggi
+max_index = weathersit_df["cnt"].idxmax()
 colors = ['gray' if i != max_index else 'red' for i in weathersit_df.index]
 
-# Bar plot penyewaan sepeda
+# Sidebar tambahan untuk interaktivitas grafik cuaca
+st.sidebar.header("Pengaturan Visualisasi Cuaca")
+chart_type = st.sidebar.radio("Pilih Jenis Grafik Cuaca:", ["Bar Chart", "Line Chart"])
+show_values = st.sidebar.checkbox("Tampilkan Nilai di Atas Batang", value=True)
+
+# Plot interaktif pengaruh cuaca
 st.subheader("Pengaruh Kondisi Cuaca terhadap Penyewaan Sepeda")
 
-# Membuat plot
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.barplot(x=weathersit_df.index, y=weathersit_df['cnt', 'mean'], palette=colors, ax=ax)
+if chart_type == "Bar Chart":
+    plot = sns.barplot(data=weathersit_df, x="weathersit", y="cnt", ax=ax, palette=colors)
+    if show_values:
+        for p in plot.patches:
+            ax.annotate(f'{p.get_height():.0f}', (p.get_x() + p.get_width() / 2., p.get_height()), 
+                        ha='center', va='bottom', fontsize=10, color='black', fontweight='bold')
+else:
+    sns.lineplot(data=weathersit_df, x="weathersit", y="cnt", marker="o", ax=ax, color="blue")
 
-# Mengatur label
-ax.set_xlabel('Kondisi Cuaca')
-ax.set_ylabel('Rata-rata Penyewaan Sepeda')
-ax.set_title('Pengaruh Kondisi Cuaca terhadap Penyewaan Sepeda')
-ax.set_xticks([0, 1, 2, 3])
-ax.set_xticklabels(['Cerah', 'Berawan', 'Hujan Ringan', 'Hujan Lebat'])
+ax.set_xlabel("Kondisi Cuaca")
+ax.set_ylabel("Rata-rata Penyewaan Sepeda")
+ax.set_title("Pengaruh Kondisi Cuaca terhadap Penyewaan Sepeda")
 
-# Menampilkan plot di Streamlit
 st.pyplot(fig)
 
+# Sidebar tambahan untuk interaktivitas penyewaan per jam
+st.sidebar.header("Pengaturan Visualisasi Per Jam")
+selected_hours = st.sidebar.slider("Pilih Rentang Jam:", 0, 23, (0, 23))
 
 # Visualisasi penyewaan per jam
 st.subheader("Tren Penyewaan Sepeda per Jam di Musim Panas dan Musim Dingin")
 
 summer_df = df[df["season"] == "Musim Panas"].groupby("hr")["cnt"].mean().reset_index()
 winter_df = df[df["season"] == "Musim Dingin"].groupby("hr")["cnt"].mean().reset_index()
+
+# Filter berdasarkan rentang jam yang dipilih
+summer_df = summer_df[(summer_df["hr"] >= selected_hours[0]) & (summer_df["hr"] <= selected_hours[1])]
+winter_df = winter_df[(winter_df["hr"] >= selected_hours[0]) & (winter_df["hr"] <= selected_hours[1])]
 
 fig, ax = plt.subplots(figsize=(10, 5))
 sns.lineplot(data=summer_df, x="hr", y="cnt", ax=ax, color="orange", label="Musim Panas")
@@ -91,7 +103,6 @@ ax.set_xlabel("Waktu/Jam dalam sehari")
 ax.set_ylabel("Rata-rata Penyewaan Sepeda")
 ax.set_title("Tren Penyewaan Sepeda per Jam di Musim Panas dan Musim Dingin")
 ax.legend()
-ax.set_xticks(range(0, 24, 2))
-
+ax.set_xticks(range(selected_hours[0], selected_hours[1] + 1, max(1, (selected_hours[1] - selected_hours[0]) // 6)))
 
 st.pyplot(fig)
